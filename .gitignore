@@ -10,5 +10,8 @@ lib-cov
 pids
 logs
 results
-
+*.DS_Store
+*.idea
+node_modules/
+logs/access.*
 npm-debug.log

@@ -1,0 +1,170 @@
+var SJProvider = require('./SJProvider').SJProvider,
+    util = require('util');
+
+var SJDataProvider = function () {
+};
+
+util.inherits(SJDataProvider, SJProvider);
+
+SJDataProvider.prototype.getCollection = function (callback) {            //创建一个getcollection方法
+    this.db.collection(this.collectionName, function (err, collection) {    //返回这个 数据库的表
+        if (err) callback(err);
+        else callback(err, collection);
+    });
+};
+
+SJDataProvider.prototype.update = function (selector, document, options, callback) {
+    if ('function' === typeof options) {
+        callback = options;
+        options = {upsert: true, multi: true, w: 1};   //更新这个数据的对象内容
+    }
+    this.getCollection(function (err, collection) {       //方法
+        if (err) callback(err);
+        else {
+            collection.update(selector, document, options, function (err, result) {
+                callback(err, result);
+            });
+        }
+    });
+};
+SJDataProvider.prototype.find = function (selector, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            collection.find(selector, options).toArray(function (err, result) {
+                if(result){
+                    callback(err, result);
+                }else {
+                    callback(err, []);
+                }
+            });
+        }
+    });
+};
+
+SJDataProvider.prototype.findOne = function (selector, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            collection.findOne(selector, options, function (err, result) {
+                callback(err, result);
+            });
+        }
+    });
+};
+SJDataProvider.prototype.findAndModify=function(query, sort, options, callback){
+    this.getCollection(function(err,collection){
+        if(err)callback(err);
+        else{
+            collection.findAndModify(query,sort,options,function(err,result){
+                callback(err,result);
+            })
+        }
+    })
+}
+SJDataProvider.prototype.insert = function (docs, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            collection.insert(docs, options, function (err, result) {
+                callback(err, result);
+            });
+        }
+    });
+};
+
+SJDataProvider.prototype.remove = function (selector, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            collection.remove(selector, options, function (err, result) {
+                callback(err, result);
+            });
+        }
+    });
+};
+
+SJDataProvider.prototype.findAndRemove = function (query, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            collection.findAndRemove(query, options, function (err, result) {
+                callback(err, result);
+            });
+        }
+    });
+};
+SJDataProvider.prototype.ensureIndex = function (fieldOrSpec, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            collection.ensureIndex(fieldOrSpec, options, function (err, result) {
+                callback(err, result);
+            });
+        }
+    });
+};
+SJDataProvider.prototype.geoNear = function (x, y, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            collection.geoNear(x, y, options, function (err, result) {
+                callback(err, result);
+            });
+        }
+    });
+};
+SJDataProvider.prototype.pagination=function(pageination, callback){
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            var options={};
+            options.limit=parseInt(pageination.pageNumber)+1;
+            options.skip=pageination.begin;
+            if(pageination.sort){
+                options.sort=pageination.sort;
+            }
+            collection.find(pageination.query, options).toArray(function (err, resultarray) {
+                if(resultarray){
+                    var result={};
+                    if(resultarray.length==options.limit){
+                        result.more=true;//有下一页
+//                        result.pageIndex=pageination.pageIndex+2;
+                        resultarray.splice(pageination.pageNumber,1);
+                    }else{
+//                        result.pageIndex=pageination.pageIndex+1;
+                        result.more=false;//有下一页
+                    }
+                    if(pageination.pageIndex==0){
+                        result.previous=false;
+                    }else{
+                        result.previous=true;
+                    }
+                    result.array=resultarray;
+                    callback(err, result);
+                }else {
+                    callback(err, []);
+                }
+            });
+        }
+    });
+};
+SJDataProvider.prototype.mapReduce = function (map, reduce, options, callback) {
+    this.getCollection(function (err, collection) {
+        if (err) callback(err);
+        else {
+            if(options.verbose){
+                collection.mapReduce(map, reduce, options, function(err, collection,stats) {
+                    callback(err,collection,stats);
+                });
+            }else{
+                collection.mapReduce(map, reduce, options, function(err, collection) {
+                    callback(err,collection);
+                });
+            }
+
+
+        }
+    });
+};
+exports.SJDataProvider = SJDataProvider;
